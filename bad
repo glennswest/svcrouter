@@ -1,0 +1,45 @@
+global
+    log         127.0.0.1 local2
+    chroot      /var/lib/haproxy
+    pidfile     /var/run/haproxy.pid
+    maxconn     4000
+    user        haproxy
+    group       haproxy
+    daemon
+
+    # turn on stats unix socket
+    stats socket /var/lib/haproxy/stats
+
+defaults
+    mode                    http
+    log                     global
+    option                  httplog
+    option                  dontlognull
+    option http-server-close
+    option                  redispatch
+    retries                 3
+    timeout http-request    10s
+    timeout queue           1m
+    timeout connect         10s
+    timeout client          1m
+    timeout server          1m
+    timeout http-keep-alive 10s
+    timeout check           10s
+    maxconn                 3000
+
+
+# Updated by svcatomsite
+frontend  http-in
+    bind *:80
+    mode http
+    acl host_test_site_com hdr(host) -i test.site.com
+    use_backend test_site_com_cluster if host_test_site_com
+backend test_site_com_cluster
+    balance roundrobin
+    option httpchk get /check
+    http-check expect status 200
+    option httpclose
+    option forwardfor
+    server node1 127.0.0.1:32785 maxconn 32
+
+

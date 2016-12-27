@@ -23,8 +23,11 @@
   },
   "homepage": "https://github.com/glennswest/svcatomsite#readme",
   "dependencies": {
-    "docker-remote-api": "^4.4.1",
+    "dockerode": "^2.3.1",
+    "fs": "0.0.1-security",
+    "fs-sync": "^1.0.3",
     "node-cmd": "^1.2.0",
-    "restify": "^4.3.0"
+    "restify": "^4.3.0",
+    "util": "^0.10.3"
   }
 }
