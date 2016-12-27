@@ -1,36 +1,40 @@
+require('log-timestamp')(function() { return new Date().toString() + ' %s' });
 var fssync = require('fs-sync');
 var fs = require('fs');
 var util=require('util');
+var process=require('process');
 var execFile=require('child_process').execFile;
 var restify = require('restify');
 var Docker = require('dockerode');
 var docker = new Docker();
 
 apps = [];
+var haproxy_pid = 0;
 
 // Start up haproxy
 function restart_haproxy(data){
 
         if (!data){
-           console.log("Starting HaProxy\n");
+           console.log("Starting HaProxy");
           } else {
-           console.log("Failed HaProxy - " + data + "\nRestarting\n");
+           console.log("Failed HaProxy - " + data + "Restarting");
           }
 	//x = cmd.run('/usr/sbin/haproxy -f /etc/haproxy/haproxy.cfg -db &',restart_haproxy);
         child = execFile('/usr/sbin/haproxy',['-f','/etc/haproxy/haproxy.cfg','-db'], (error, stdout, stderr) => {
                 if (error){
-                   console.log("Error On Exec: " + util.inspect(error) + "\n");
-                   restart_haproxy(error.signal);
-                   }
+                   console.log("Error On Exec: " + util.inspect(error) + "");
+                   } 
+                restart_haproxy("Restarting HA Proxy");
                 });
-        console.log("HaProxy PID= " + util.inspect(child.pid) + "\n");
+        console.log("HaProxy PID= " + util.inspect(child.pid) + "");
+        haproxy_pid = child.pid;
 }
 
 restart_haproxy();
 
 function reread_haproxy(){
-       console.log("Force a reread of config\n");
-       // cmd.run('/usr/sbin/haproxy -p /var/run/haproxy.pid -sf $(cat /var/run/haproxy.pid)',console.log);
+       console.log("Force a reread of config - PID: " + haproxy_pid + "");
+       process.kill(haproxy_pid,'SIGUSR1');
 }
 
 //frontend  http-in
@@ -57,8 +61,7 @@ function reread_haproxy(){
 //   seen: true }
 
 function WriteHaProxyConfig(){
-        console.log("Updating HaProxyConfig\n");
-        console.log("Apps = " + util.inspect(apps));
+        console.log("Updating HaProxyConfig");
         options = {};
         options.force = true;
         fssync.copy('/etc/haproxy/haproxy-base.cfg','/etc/haproxy/haproxy.cfg',options);
@@ -113,7 +116,6 @@ function WriteHaProxyConfig(){
 
 function CheckContainers(){
         
-        console.log("Checking Containers\n");
         apps.forEach(function(entry){
               entry.seen = false;
               });
