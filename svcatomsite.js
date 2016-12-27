@@ -1,7 +1,7 @@
 var fssync = require('fs-sync');
 var fs = require('fs');
 var util=require('util');
-var cmd=require('node-cmd');
+var execFile=require('child_process').execFile;
 var restify = require('restify');
 var Docker = require('dockerode');
 var docker = new Docker();
@@ -10,12 +10,20 @@ apps = [];
 
 // Start up haproxy
 function restart_haproxy(data){
+
         if (!data){
            console.log("Starting HaProxy\n");
           } else {
            console.log("Failed HaProxy - " + data + "\nRestarting\n");
           }
-	cmd.run('/usr/sbin/haproxy -f /etc/haproxy/haproxy.cfg -db &',restart_haproxy);
+	//x = cmd.run('/usr/sbin/haproxy -f /etc/haproxy/haproxy.cfg -db &',restart_haproxy);
+        child = execFile('/usr/sbin/haproxy',['-f','/etc/haproxy/haproxy.cfg','-db'], (error, stdout, stderr) => {
+                if (error){
+                   console.log("Error On Exec: " + util.inspect(error) + "\n");
+                   restart_haproxy(error.signal);
+                   }
+                });
+        console.log("HaProxy PID= " + util.inspect(child.pid) + "\n");
 }
 
 restart_haproxy();
@@ -110,6 +118,8 @@ function CheckContainers(){
               entry.seen = false;
               });
 	docker.listContainers(function (err, containers) {
+            if (err) console.log(util.inspect(err));
+            if (containers == null) return;
             containers.forEach(function (containerInfo) {
               theapp = apps.find(o => o.id === containerInfo.Id);
               if (!theapp){
