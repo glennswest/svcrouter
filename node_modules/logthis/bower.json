@@ -1,0 +1,22 @@
+{
+  "name": "logthis",
+  "main": "logthis.js",
+  "version": "0.1.6",
+  "homepage": "https://github.com/Michieljoris/logthis",
+  "authors": [
+    "Michiel van Oosten <mail@axion5.net>"
+  ],
+  "description": "A little namespaced logging utility for node and the browser.",
+  "keywords": [
+    "log",
+    "debug"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

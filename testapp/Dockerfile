@@ -1,15 +1,16 @@
-FROM mhart/alpine-node:base-6
-# FROM mhart/alpine-node:6
+#FROM mhart/alpine-node:base-6
+FROM mhart/alpine-node:6
 
-WORKDIR /src
-ADD . .
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
 
-# If you have native dependencies, you'll need extra tools
-# RUN apk add --no-cache make gcc g++ python
+#Install app dependencies
+COPY package.json /usr/src/app/
+RUN npm install
 
-# If you need npm, don't use a base tag
-# RUN npm install
+# Bundle app source
+COPY . /usr/src/app
 
-EXPOSE 3000
+EXPOSE 8080
 CMD ["node", "index.js"]
 
