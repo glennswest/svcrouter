@@ -15,13 +15,14 @@ function restart_haproxy(data){
           } else {
            console.log("Failed HaProxy - " + data + "\nRestarting\n");
           }
-	cmd.run('/usr/sbin/haproxy -f /etc/haproxy/haproxy.cfg -db',restart_haproxy);
+	cmd.run('/usr/sbin/haproxy -f /etc/haproxy/haproxy.cfg -db &',restart_haproxy);
 }
 
-restart_haproxy("");
+restart_haproxy();
 
 function reread_haproxy(){
-       cmd.run('/usr/sbin/haproxy -p /var/run/haproxy.pid -sf $(cat /var/run/haproxy.pid)',console.log);
+       console.log("Force a reread of config\n");
+       // cmd.run('/usr/sbin/haproxy -p /var/run/haproxy.pid -sf $(cat /var/run/haproxy.pid)',console.log);
 }
 
 //frontend  http-in
