@@ -28,5 +28,5 @@ RUN npm install
 COPY . /usr/src/app
 
 EXPOSE 8080
-CMD ["node", "svcrouter.js"]
+CMD ["ash","./svcrouter.sh"]
 

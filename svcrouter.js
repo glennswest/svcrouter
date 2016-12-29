@@ -7,9 +7,44 @@ var execFile=require('child_process').execFile;
 var restify = require('restify');
 var Docker = require('dockerode');
 var docker = new Docker();
+var mqtt = require('mqtt')
+var uuid = require('uuid/v4');
+var myuuid = uuid();
+var haproxy_pid = 0;
 
 apps = [];
-var haproxy_pid = 0;
+
+var myIP = process.env.myIP;
+console.log("My IP is: " + myIP);
+
+
+var mymqtt  = mqtt.connect('mqtt://' + myIP);
+var servicedata = {name: "svcrouter",ip: myIP, id: myuuid, version: "v1"};
+
+mymqtt.on('connect', function(){
+    mymqtt.subscribe('servicediscovery');
+    mymqtt.publish('servicediscovery',JSON.stringify(servicedata));
+    }
+)
+
+mymqtt.on('message', function(topic, messagestr){
+        message = JSON.parse(messagestr);
+        switch(topic){
+            default:
+               break;
+         }
+
+});
+
+function add_host_name(name, ip){
+        console.log("Add DNS Entry for " + name + "(" + ip + ")");
+	message = {};
+	message.name = name;
+        message.ip = ip;
+        message.version = 'v1';
+        mymqtt.publish('svcdnsadd',JSON.stringify(message));
+        return;
+}
 
 // Start up haproxy
 function restart_haproxy(data){
@@ -62,6 +97,7 @@ function reread_haproxy(){
 
 function WriteHaProxyConfig(){
         console.log("Updating HaProxyConfig");
+	myIP = process.env.myIP;
         options = {};
         options.force = true;
         fssync.copy('/etc/haproxy/haproxy-base.cfg','/etc/haproxy/haproxy.cfg',options);
@@ -131,8 +167,10 @@ function CheckContainers(){
                  o.ports   = containerInfo.Ports;
                  o.seen    = 1;
                  apps.push(o);
-                 console.log("Found new container " + o.name);
-                 WriteHaProxyConfig();
+		 WriteHaProxyConfig();
+                 hostname = o.name.substr(1);
+                 add_host_name(hostname,myIP);
+                 console.log("Found new container " + hostname);
                  } else {
                  theapp.seen = true;
                  }
