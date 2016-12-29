@@ -1,1 +1,1 @@
-docker logs svcatomsite.site.com
+docker logs svcrouter.site.com

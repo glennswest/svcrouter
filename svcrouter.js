@@ -65,7 +65,7 @@ function WriteHaProxyConfig(){
         options = {};
         options.force = true;
         fssync.copy('/etc/haproxy/haproxy-base.cfg','/etc/haproxy/haproxy.cfg',options);
-        fs.appendFileSync('/etc/haproxy/haproxy.cfg','\n# Updated by svcatomsite\n');
+        fs.appendFileSync('/etc/haproxy/haproxy.cfg','\n# Updated by svcrouter\n');
         fs.appendFileSync('/etc/haproxy/haproxy.cfg','frontend  http-in\n');
         fs.appendFileSync('/etc/haproxy/haproxy.cfg','    bind *:80\n');
         fs.appendFileSync('/etc/haproxy/haproxy.cfg','    mode http\n');

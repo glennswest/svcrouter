@@ -1,2 +1,2 @@
-docker build -t svcatomsite .
+docker build -t svcrouter .
 

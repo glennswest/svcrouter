@@ -1,14 +1,14 @@
 {
-  "name": "svcatomsite",
+  "name": "svcrouter",
   "version": "1.0.0",
   "description": "Atomic MultiHost Router/Load Balancer",
-  "main": "svcatomsite.js",
+  "main": "svcrouter.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/glennswest/svcatomsite.git"
+    "url": "git+https://github.com/glennswest/svcrouter.git"
   },
   "keywords": [
     "atomic",
@@ -19,9 +19,9 @@
   "author": "Glenn West",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/glennswest/svcatomsite/issues"
+    "url": "https://github.com/glennswest/svcrouter/issues"
   },
-  "homepage": "https://github.com/glennswest/svcatomsite#readme",
+  "homepage": "https://github.com/glennswest/svcrouter#readme",
   "dependencies": {
     "child_process": "^1.0.2",
     "dockerode": "^2.3.1",
