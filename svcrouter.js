@@ -167,10 +167,10 @@ function CheckContainers(){
                  o.ports   = containerInfo.Ports;
                  o.seen    = 1;
                  apps.push(o);
-		 WriteHaProxyConfig();
                  hostname = o.name.substr(1);
-                 add_host_name(hostname,myIP);
+		 WriteHaProxyConfig();
                  console.log("Found new container " + hostname);
+                 add_host_name(hostname,myIP);
                  } else {
                  theapp.seen = true;
                  }
