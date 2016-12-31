@@ -14,7 +14,8 @@ var haproxy_pid = 0;
 
 apps = [];
 
-var myIP = process.env.myIP;
+dhostname = "";
+myIP = process.env.myIP;
 console.log("My IP is: " + myIP);
 
 
@@ -144,9 +145,11 @@ function WriteHaProxyConfig(){
         fs.appendFileSync('/etc/haproxy/haproxy.cfg','    bind *:80\n');
         fs.appendFileSync('/etc/haproxy/haproxy.cfg','    mode http\n');
         apps.forEach(function(entry){
+            console.log("WriteHaProxyConfig: Processing Entries");
             if (entry.ports.length > 0){
                hostname = entry.name.slice(1);
                name = hostname.replace(/\./gi,'_');
+               console.log("hostname = " + hostname + "name = " + name);
                line = '    acl host_' + name + ' hdr(host) -i ' + hostname + '\n';
                fs.appendFileSync('/etc/haproxy/haproxy.cfg',line);
                line = '    use_backend ' + name + '_cluster if host_' + name + '\n';
@@ -157,6 +160,7 @@ function WriteHaProxyConfig(){
             if (entry.ports.length > 0){
                hostname = entry.name.slice(1);
                name = hostname.replace(/\./gi,'_');
+               console.log("hostname = " + hostname + "name = " + name);
                line = 'backend ' + name + '_cluster' + '\n';
                fs.appendFileSync('/etc/haproxy/haproxy.cfg',line);
                fs.appendFileSync('/etc/haproxy/haproxy.cfg','    balance roundrobin\n');
@@ -187,6 +191,17 @@ function WriteHaProxyConfig(){
 //  Status: 'Up 3 minutes',
 //  HostConfig: { NetworkMode: 'default' },
 //  NetworkSettings: { Networks: { bridge: [Object] } } }
+//
+//      "Config": {
+//            "Hostname": "s001",
+//            "Domainname": "site.com",
+//            "User": "",
+//            "AttachStdin": false,
+//            "AttachStdout": false,
+//            "AttachStderr": false,
+//            "ExposedPorts": {
+//                "8080/tcp": {}
+//            },
 
 function CheckContainers(){
         
@@ -206,6 +221,7 @@ function CheckContainers(){
                  o.name    = containerInfo.Names[0];
                  o.hostname = o.name.substr(1);
                  o.ports   = containerInfo.Ports;
+                 console.log("Containerinfo: " + util.inspect(containerInfo));
                  o.seen    = 1;
                  o.ip      = myIP;
                  apps.push(o);
@@ -220,6 +236,15 @@ function CheckContainers(){
         // Handle case where containers are gone
 }
 
+function setup_docker_host(){
+	info = docker.info(function(err, info){
+                  console.log("Docker info: " + util.inspect(info));
+                  dhostname = info.Name;
+                  });
+}
+
+
+setup_docker_host();
 
 CheckContainers();
 setInterval(CheckContainers, 5000);
