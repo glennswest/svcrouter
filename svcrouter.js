@@ -29,12 +29,50 @@ mymqtt.on('connect', function(){
 
 mymqtt.on('message', function(topic, messagestr){
         message = JSON.parse(messagestr);
+        console.log("message: " + topic + "message: " + util.inspect(message));
         switch(topic){
+            // Expect: var servicedata = {name: "svcdns",ip: myIP, id: myuuid, version: "v1"};
+            case "servicediscovery":
+                 switch(message.name){
+                     case "svcdns":
+                          send_dnsresync_message();
+                          break;
+                     default:
+                          break;
+                     }
+               break;
             default:
                break;
          }
 
 });
+
+function send_dnsresync_message()
+{
+	message = {};
+        a = [];
+	console.log("Doing DNS Resync");
+	apps.forEach(function(entry){
+          e = {};
+          e.name = entry.hostname + ".";
+          hostarray = e.name.split(".");
+          hostarray.shift();
+          zone = hostarray.join('.');
+          console.log(zone);
+          if (zone == ''){
+             zone = 'nod.site.com.';
+             name = e.name + zone;
+             e.name = name;
+             }
+          e.zone = zone;
+          e.ip   = entry.ip;
+          a.push(e);
+          });
+       message.a = a;
+       console.log("dnssync: " + util.inspect(message));
+       mymqtt.publish('svcdnssync',JSON.stringify(message));
+       return;
+}
 
 function add_host_name(name, ip){
         console.log("Add DNS Entry for " + name + "(" + ip + ")");
@@ -160,17 +198,20 @@ function CheckContainers(){
             if (containers == null) return;
             containers.forEach(function (containerInfo) {
               theapp = apps.find(o => o.id === containerInfo.Id);
+	message = {};
+        a = [];
               if (!theapp){
                  o = {};
                  o.id = containerInfo.Id;
                  o.name    = containerInfo.Names[0];
+                 o.hostname = o.name.substr(1);
                  o.ports   = containerInfo.Ports;
                  o.seen    = 1;
+                 o.ip      = myIP;
                  apps.push(o);
-                 hostname = o.name.substr(1);
 		 WriteHaProxyConfig();
-                 console.log("Found new container " + hostname);
-                 add_host_name(hostname,myIP);
+                 console.log("Found new container " + o.hostname);
+                 add_host_name(o.hostname,o.ip);
                  } else {
                  theapp.seen = true;
                  }
