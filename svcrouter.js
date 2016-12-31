@@ -5,14 +5,16 @@ var util=require('util');
 var process=require('process');
 var execFile=require('child_process').execFile;
 var restify = require('restify');
-var Docker = require('dockerode');
-var docker = new Docker();
 var mqtt = require('mqtt')
 var uuid = require('uuid/v4');
 var myuuid = uuid();
 var haproxy_pid = 0;
 
+Docker = require('dockerode');
+docker = new Docker();
+
 apps = [];
+update_needed = false;
 
 dhostname = "";
 myIP = process.env.myIP;
@@ -213,19 +215,25 @@ function CheckContainers(){
             if (containers == null) return;
             containers.forEach(function (containerInfo) {
               theapp = apps.find(o => o.id === containerInfo.Id);
-	message = {};
-        a = [];
+	      message = {};
+              a = [];
               if (!theapp){
                  o = {};
                  o.id = containerInfo.Id;
                  o.name    = containerInfo.Names[0];
+                 container = docker.getContainer(o.id);
+                 container.inspect(function(err,data){
+                       o.exposed_ports = data.Config.ExposedPorts;
+                       console.log("Check Containers Inpect");
+                       console.log(data.Name);
+                       console.log(util.inspect(o.exposed_ports));
+                       });
                  o.hostname = o.name.substr(1);
                  o.ports   = containerInfo.Ports;
-                 console.log("Containerinfo: " + util.inspect(containerInfo));
                  o.seen    = 1;
                  o.ip      = myIP;
                  apps.push(o);
-		 WriteHaProxyConfig();
+		 update_needed = true;
                  console.log("Found new container " + o.hostname);
                  add_host_name(o.hostname,o.ip);
                  } else {
@@ -234,11 +242,14 @@ function CheckContainers(){
   	      });
             });
         // Handle case where containers are gone
+        if (update_needed == true){
+		 WriteHaProxyConfig();
+		 update_needed = false;
+                 }
 }
 
 function setup_docker_host(){
 	info = docker.info(function(err, info){
-                  console.log("Docker info: " + util.inspect(info));
                   dhostname = info.Name;
                   });
 }
