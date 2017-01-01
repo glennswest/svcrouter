@@ -14,9 +14,15 @@ Docker = require('dockerode');
 docker = new Docker();
 
 apps = [];
+xapps = [];
+
 update_needed = false;
 
+sitename = "";
 dhostname = "";
+lhostname = "";
+ghostname = "";
+
 myIP = process.env.myIP;
 console.log("My IP is: " + myIP);
 
@@ -71,6 +77,13 @@ function send_dnsresync_message()
           e.ip   = entry.ip;
           a.push(e);
           });
+       xapps.forEach(function(entry){
+          e = {};
+          e.name = entry.name + '.';
+          e.zone = entry.zone + '.';
+          e.ip   = entry.ip;
+          a.push(e);
+          });
        message.a = a;
        console.log("dnssync: " + util.inspect(message));
        mymqtt.publish('svcdnssync',JSON.stringify(message));
@@ -93,7 +106,7 @@ function restart_haproxy(data){
         if (!data){
            console.log("Starting HaProxy");
           } else {
-           console.log("Failed HaProxy - " + data + "Restarting");
+           console.log("HaProxy Restart Needed: " + data);
           }
 	//x = cmd.run('/usr/sbin/haproxy -f /etc/haproxy/haproxy.cfg -db &',restart_haproxy);
         child = execFile('/usr/sbin/haproxy',['-f','/etc/haproxy/haproxy.cfg','-db'], (error, stdout, stderr) => {
@@ -147,7 +160,6 @@ function WriteHaProxyConfig(){
         fs.appendFileSync('/etc/haproxy/haproxy.cfg','    bind *:80\n');
         fs.appendFileSync('/etc/haproxy/haproxy.cfg','    mode http\n');
         apps.forEach(function(entry){
-            console.log("WriteHaProxyConfig: Processing Entries");
             if (entry.ports.length > 0){
                hostname = entry.name.slice(1);
                name = hostname.replace(/\./gi,'_');
@@ -157,6 +169,15 @@ function WriteHaProxyConfig(){
                line = '    use_backend ' + name + '_cluster if host_' + name + '\n';
                fs.appendFileSync('/etc/haproxy/haproxy.cfg',line);
                }
+            });
+        xapps.forEach(function(entry){
+               hostname = entry.name;
+               name = hostname.replace(/\./gi,'_');
+               console.log("hostname = " + hostname + "name = " + name);
+               line = '    acl host_' + name + ' hdr(host) -i ' + hostname + '\n';
+               fs.appendFileSync('/etc/haproxy/haproxy.cfg',line);
+               line = '    use_backend ' + name + '_cluster if host_' + name + '\n';
+               fs.appendFileSync('/etc/haproxy/haproxy.cfg',line);
             });
         apps.forEach(function(entry){
             if (entry.ports.length > 0){
@@ -173,6 +194,19 @@ function WriteHaProxyConfig(){
                theport = entry.ports[0].PublicPort;
                fs.appendFileSync('/etc/haproxy/haproxy.cfg','    server node1 127.0.0.1:' + theport + ' maxconn 32\n');
                }
+            });
+        xapps.forEach(function(entry){
+               hostname = entry.name;
+               name = hostname.replace(/\./gi,'_');
+               console.log("hostname = " + hostname + "name = " + name);
+               line = 'backend ' + name + '_cluster' + '\n';
+               fs.appendFileSync('/etc/haproxy/haproxy.cfg',line);
+               fs.appendFileSync('/etc/haproxy/haproxy.cfg','    balance roundrobin\n');
+               fs.appendFileSync('/etc/haproxy/haproxy.cfg','    option httpchk get /check\n');
+               fs.appendFileSync('/etc/haproxy/haproxy.cfg','    http-check expect status 200\n');
+               fs.appendFileSync('/etc/haproxy/haproxy.cfg','    option httpclose\n');
+               fs.appendFileSync('/etc/haproxy/haproxy.cfg','    option forwardfor\n');
+               fs.appendFileSync('/etc/haproxy/haproxy.cfg','    server node1 ' + entry.ip + ':' + entry.port + ' maxconn 32\n');
             });
         fs.appendFileSync('/etc/haproxy/haproxy.cfg','\n');
         reread_haproxy();
@@ -241,21 +275,45 @@ function CheckContainers(){
                  }
   	      });
             });
-        // Handle case where containers are gone
+        // BUG: Handle case where containers are gone
         if (update_needed == true){
 		 WriteHaProxyConfig();
 		 update_needed = false;
                  }
 }
 
+function get_domain(name){
+        console.log("get_domain: " + name);
+	namearray = name.split(".");
+	namearray.shift();
+	domain = namearray.join('.');
+	return(domain);
+}
+
+function add_xapps(name,zone,ip,port){
+	x = {};
+	x.name = name;
+	x.zone = zone;
+	x.ip   = ip;
+        x.port = port;
+        add_host_name(x.name,x.ip);
+	xapps.push(x);
+}
+
 function setup_docker_host(){
 	info = docker.info(function(err, info){
                   dhostname = info.Name;
+                  sitename = get_domain(dhostname);
+                  lhostname = "svcrouter." + dhostname;
+		  add_xapps(lhostname,dhostname,myIP,8080);
+                  ghostname = "svcrouter." + sitename;
+		  add_xapps(ghostname,sitename,myIP,8080);
                   });
 }
 
 
 setup_docker_host();
+
 
 CheckContainers();
 setInterval(CheckContainers, 5000);
