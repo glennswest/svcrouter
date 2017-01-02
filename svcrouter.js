@@ -45,6 +45,7 @@ mymqtt.on('message', function(topic, messagestr){
                  switch(message.name){
                      case "svcdns":
                           send_dnsresync_message();
+                          register_xapps();
                           break;
                      default:
                           break;
@@ -300,19 +301,20 @@ function add_xapps(name,zone,ip,port){
 	xapps.push(x);
 }
 
-function setup_docker_host(){
+function register_xapps(){
 	info = docker.info(function(err, info){
                   dhostname = info.Name;
                   sitename = get_domain(dhostname);
                   lhostname = "svcrouter." + dhostname;
 		  add_xapps(lhostname,dhostname,myIP,8080);
+		  add_xapps(dhostname,sitename,myIP,8080);  // Register The Host Itself
                   ghostname = "svcrouter." + sitename;
 		  add_xapps(ghostname,sitename,myIP,8080);
                   });
 }
 
 
-setup_docker_host();
+register_xapps();
 
 
 CheckContainers();
