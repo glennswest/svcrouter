@@ -188,8 +188,8 @@ function WriteHaProxyConfig(){
                line = 'backend ' + name + '_cluster' + '\n';
                fs.appendFileSync('/etc/haproxy/haproxy.cfg',line);
                fs.appendFileSync('/etc/haproxy/haproxy.cfg','    balance roundrobin\n');
-               fs.appendFileSync('/etc/haproxy/haproxy.cfg','    option httpchk get /check\n');
-               fs.appendFileSync('/etc/haproxy/haproxy.cfg','    http-check expect status 200\n');
+               //fs.appendFileSync('/etc/haproxy/haproxy.cfg','    option httpchk get /check\n');
+               //fs.appendFileSync('/etc/haproxy/haproxy.cfg','    http-check expect status 200\n');
                fs.appendFileSync('/etc/haproxy/haproxy.cfg','    option httpclose\n');
                fs.appendFileSync('/etc/haproxy/haproxy.cfg','    option forwardfor\n');
                theport = entry.ports[0].PublicPort;
@@ -317,7 +317,7 @@ function register_xapps(){
 }
 
 
-register_xapps();
+//register_xapps();
 
 
 CheckContainers();

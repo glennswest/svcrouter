@@ -6,7 +6,8 @@ After=docker.service
 Restart=always
 ExecStart=/usr/bin/docker start -a svcrouter.ncc9.com
 ExecStop=/usr/bin/docker stop -t 2 svcrouter.ncc9.com
+StartLimitInterval=90
+StartLimitBurst=3
 
 [Install]
-WantedBy=local.target
-
+WantedBy=multi-user.target
