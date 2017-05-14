@@ -306,6 +306,9 @@ function register_xapps(){
                   dhostname = info.Name;
                   sitename = get_domain(dhostname);
                   lhostname = "svcrouter." + dhostname;
+                  console.log("Xhosts");
+                  console.log("sitename = " + sitename);
+                  console.log("dhostname = " + dhostname);
 		  add_xapps(lhostname,dhostname,myIP,8080);
 		  add_xapps(dhostname,sitename,myIP,8080);  // Register The Host Itself
                   ghostname = "svcrouter." + sitename;
