@@ -276,6 +276,14 @@ function CheckContainers(){
                  }
   	      });
             });
+        
+         apps.forEach(function(entry,index){
+              if (entry.seen == false){
+                 console.log("Removing container " + entry.hostname);
+                 apps.splice(index,1);
+                 }
+              });
+        
         // BUG: Handle case where containers are gone
         if (update_needed == true){
 		 WriteHaProxyConfig();
