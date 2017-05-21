@@ -1,6 +1,6 @@
 [Unit]
 Description=svcrouter container
-After=docker.service
+After=svcmqtt.service
 
 [Service]
 Restart=always

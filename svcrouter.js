@@ -192,7 +192,14 @@ function WriteHaProxyConfig(){
                //fs.appendFileSync('/etc/haproxy/haproxy.cfg','    http-check expect status 200\n');
                fs.appendFileSync('/etc/haproxy/haproxy.cfg','    option httpclose\n');
                fs.appendFileSync('/etc/haproxy/haproxy.cfg','    option forwardfor\n');
-               theport = entry.ports[0].PublicPort;
+               entry.ports.forEach(function(portentry){
+                      console.log("Port Entry = " + util.inspect(portentry));
+                      if ((portentry.PrivatePort > 7999 && portentry.PrivatePort < 9000) ||
+                          (portentry.PrivatePort > 79 && portentry.PrivatePort < 90)){
+                         theport = portentry.PublicPort;
+                         }
+                      });
+               console.log("Port = " + theport);
                fs.appendFileSync('/etc/haproxy/haproxy.cfg','    server node1 127.0.0.1:' + theport + ' maxconn 32\n');
                }
             });
@@ -240,51 +247,74 @@ function WriteHaProxyConfig(){
 //                "8080/tcp": {}
 //            },
 
+function FindTheContainer(thename)
+{
+var thefoundone = null;
+var thefoundidx = null;
+
+        apps.forEach(function(entry,idx){
+             if (entry.name.valueOf() === thename.valueOf()){
+                thefoundone = entry;
+                thefoundidx = idx;
+                }
+             });
+        return thefoundidx;
+}
+
+function process_new_container(tc)
+{
+     var o = {};
+     o.id = tc.Id;
+     o.name    = tc.Names[0];
+     container = docker.getContainer(o.id);
+     container.inspect(function(err,data){
+        o.exposed_ports = data.Config.ExposedPorts;
+        });
+     o.hostname = o.name.substr(1);
+     o.ports   = tc.Ports;
+     o.seen    = true;
+     o.ip      = myIP;
+     apps.push(o);
+     update_needed = true;
+     add_host_name(o.hostname,o.ip);
+
+
+}
+function ClearSeenFlag()
+{
+        apps.forEach(function(element,idx){
+             apps[idx].seen = false;
+             });
+
+}
+
 function CheckContainers(){
         
-        apps.forEach(function(entry){
-              entry.seen = false;
-              });
 	docker.listContainers(function (err, containers) {
-            if (err) console.log(util.inspect(err));
+            if (err){
+                console.log("ERROR Listing Containers");
+                console.log(util.inspect(err));
+                return;
+                }
             if (containers == null) return;
             containers.forEach(function (containerInfo) {
-              theapp = apps.find(o => o.id === containerInfo.Id);
-	      message = {};
-              a = [];
-              if (!theapp){
-                 o = {};
-                 o.id = containerInfo.Id;
-                 o.name    = containerInfo.Names[0];
-                 container = docker.getContainer(o.id);
-                 container.inspect(function(err,data){
-                       o.exposed_ports = data.Config.ExposedPorts;
-                       console.log("Check Containers Inpect");
-                       console.log(data.Name);
-                       console.log(util.inspect(o.exposed_ports));
-                       });
-                 o.hostname = o.name.substr(1);
-                 o.ports   = containerInfo.Ports;
-                 o.seen    = 1;
-                 o.ip      = myIP;
-                 apps.push(o);
-		 update_needed = true;
-                 console.log("Found new container " + o.hostname);
-                 add_host_name(o.hostname,o.ip);
+              theappidx = FindTheContainer(containerInfo.Names[0]);
+              if (theappidx === null){
+                 process_new_container(containerInfo);
                  } else {
-                 theapp.seen = true;
+                 apps[theappidx].seen = true;
                  }
   	      });
             });
         
          apps.forEach(function(entry,index){
-              if (entry.seen == false){
+              if (entry.seen === false){
                  console.log("Removing container " + entry.hostname);
+                 update_needed = true;
                  apps.splice(index,1);
                  }
               });
         
-        // BUG: Handle case where containers are gone
         if (update_needed == true){
 		 WriteHaProxyConfig();
 		 update_needed = false;
