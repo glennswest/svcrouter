@@ -1,1 +1,1 @@
-docker logs svcrouter.ncc9.com
+docker logs svcrouter.${SVCDOMAIN}

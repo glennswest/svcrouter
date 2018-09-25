@@ -180,6 +180,7 @@ function WriteHaProxyConfig(){
                line = '    use_backend ' + name + '_cluster if host_' + name + '\n';
                fs.appendFileSync('/etc/haproxy/haproxy.cfg',line);
             });
+        theport = 0;
         apps.forEach(function(entry){
             if (entry.ports.length > 0){
                hostname = entry.name.slice(1);
@@ -194,10 +195,13 @@ function WriteHaProxyConfig(){
                fs.appendFileSync('/etc/haproxy/haproxy.cfg','    option forwardfor\n');
                entry.ports.forEach(function(portentry){
                       console.log("Port Entry = " + util.inspect(portentry));
-                      if ((portentry.PrivatePort > 7999 && portentry.PrivatePort < 9000) ||
-                          (portentry.PrivatePort > 79 && portentry.PrivatePort < 90)){
+                      if (theport == 0){
                          theport = portentry.PublicPort;
-                         }
+                        } else {
+                        if (portentry.PrivatePort < theport){
+                          theport = portentry.PublicPort;
+                          }
+                        }
                       });
                console.log("Port = " + theport);
                fs.appendFileSync('/etc/haproxy/haproxy.cfg','    server node1 127.0.0.1:' + theport + ' maxconn 32\n');
@@ -219,6 +223,16 @@ function WriteHaProxyConfig(){
         fs.appendFileSync('/etc/haproxy/haproxy.cfg','\n');
         reread_haproxy();
 }
+
+//Tue Sep 25 2018 18:20:12 GMT+0800 (SGT) Updating HaProxyConfig
+//Tue Sep 25 2018 18:20:12 GMT+0800 (SGT) hostname = wlab.app.ctl.k.e2e.bos.redhat.comname = wlab_app_ctl_k_e2e_bos_redhat_com
+//Tue Sep 25 2018 18:20:12 GMT+0800 (SGT) hostname = wlab.app.ctl.k.e2e.bos.redhat.comname = wlab_app_ctl_k_e2e_bos_redhat_com
+//Tue Sep 25 2018 18:20:12 GMT+0800 (SGT) Port Entry = { IP: '0.0.0.0',
+  //PrivatePort: 8085,
+  //PublicPort: 32769,
+  //Type: 'tcp' }
+//Tue Sep 25 2018 18:20:12 GMT+0800 (SGT) Port Entry = { PrivatePort: 8080, Type: 'tcp' }
+//Tue Sep 25 2018 18:20:12 GMT+0800 (SGT) Port = undefined
 
 //cI: { Id: 'ec126df2397adb3b579716de27423e1079c7af1eb881697ca353b62b80ab3b73',
 //  Names: [ '/test.site.com' ],

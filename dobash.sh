@@ -1,2 +1,2 @@
-docker exec -i -t svcrouter.ncc9.com /bin/sh
+docker exec -i -t svcrouter.${SVCDOMAIN} /bin/sh
 
