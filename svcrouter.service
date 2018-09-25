@@ -4,8 +4,9 @@ After=svcmqtt.service
 
 [Service]
 Restart=always
-ExecStart=/usr/bin/docker start -a svcrouter.ncc9.com
-ExecStop=/usr/bin/docker stop -t 2 svcrouter.ncc9.com
+EnvironmentFile=/etc/svcenv
+ExecStart=/usr/bin/docker start -a svcrouter.${SVCDOMAIN}
+ExecStop=/usr/bin/docker stop -t 2 svcrouter.${SVCDOMAIN}
 StartLimitInterval=90
 StartLimitBurst=3
 
